@@ -1,13 +1,19 @@
-import os
+"""
+Converts veterinary radiology report PDFs into plain text files for NLP/LLM-based analysis.
+Uses PDFMiner for text-based PDFs and falls back to OCR for scanned documents.
+The resulting corpus supports downstream tasks such as few-shot classification and dataset curation.
+"""
+
+from pdfminer.high_level import extract_text
+from pdf2image import convert_from_path
 from pathlib import Path
-from typing import Optional
+import pytesseract
 
 DATA_DIR = Path("data")
 TEXT_DIR = DATA_DIR / "text"
 GLOB_PATTERN = "*.pdf"
 
 def extract_text_pdfminer(pdf_path: Path) -> str:
-    from pdfminer.high_level import extract_text
     try:
         return extract_text(str(pdf_path)) or ""
     except Exception as e:
@@ -15,12 +21,6 @@ def extract_text_pdfminer(pdf_path: Path) -> str:
         return ""
 
 def extract_text_ocr(pdf_path: Path) -> str:
-    try:
-        import pytesseract
-        from pdf2image import convert_from_path
-    except Exception:
-        return ""
-
     text_parts = []
     try:
         images = convert_from_path(str(pdf_path))
