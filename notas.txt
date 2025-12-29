@@ -1,0 +1,28 @@
+Os códigos foram separados em duas pastas:
+- models
+- reports
+
+A pasta de /models contém os códigos referentes a modelos.
+A pasta /finetuned contém o código usado para execução de finetuning
+de redes treinadas em Imagenet e em exames radiográficos de humanos. O arquivo
+config.yaml serve para definir os parâmetros desejados para execução dos experimentos.
+A pasta /ssl contém o código usado para avaliar o desempenho em um foundation model.
+
+* Eu fiz o código dos modelos com a biblioteca do torchvision e as especificas dos modelos baixadas
+diretamente do github, portanto talvez seja preciso fazer dessa maneira para executar o código sem problemas.
+
+Quanto a pasta de /reports, temos dois arquivos principais: to_txt e main. O to_txt tem o objetivo apenas
+de transformar os laudos em pdf para txts, de forma a facilitar a manipulação. O main tem o objetivo
+de filtrar apenas os laudos referentes à radiografias torácicas, fazendo em seguida uma nuvem de palavras
+apenas para visualização generalizada de termos além de uma pré-classificação dos laudos, dentre as 4 categorias
+previamente escolhidas (Pleura, Intrapulmonar, Ambos e Ausência), usando llms. Para isso, baixei na máquina um modelo
+7B do DeepSeek via hugging face, porém pode-se testar com outros modelos open source disponíveis, como o llama e afins.
+
+a pasta output já tem uma execução feita para os 924 laudos obtidos, com uma wordcloud e um csv das frequências de cada
+palavra além da classificação das opacidades.
+
+O prompt feito com o deepseek foi dando um exemplo de cada categoria para dar um norte ao modelo. Pode trocar
+sem dificuldades os exemplos que selecionei, além de que pode-se melhorar o prompt que coloquei.
+
+No geral, a pasta foi mantida apenas com os códigos, logo os dados serão precisos ser inseridos para executar sem
+problemas. Importante verificar também os paths das pastas/modelos.

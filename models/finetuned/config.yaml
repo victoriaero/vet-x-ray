@@ -1,0 +1,36 @@
+data_dir: "./data" # manter as pastas dentro do diretório com os nomes iguais ao class_map
+output_dir: "./output"
+projection: "VD" # qual projecao deve ser usada
+class_map:
+  ausencia: 0
+  ambos: 1
+  pleura: 1
+  intrapulmonar: 1
+  
+# para imagenet
+model_name: resnet34 # pode ser resnet 18 ou 50 também
+pretrained: true # usa pesos do imagenet
+
+# TorchXRayVision
+use_torchxrayvision: true
+xrv_model_name: "resnet50-res512-all"
+
+# EVA‑X
+use_evax: false
+eva_x_size: "small"
+
+grayscale_input: false # se verdadeiro, não é possível usar os pesos do imagenet; para modelos de raiox, o campo deve ser verdadeiro.
+
+batch_size: 16
+num_epochs: 15
+lr: 1e-5
+num_workers: 4
+
+use_augmentation: true
+use_dropout: true
+dropout_rate: 0.3
+
+val_split: 0.15
+test_split: 0.15
+
+seed: 42
