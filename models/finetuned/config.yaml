@@ -1,26 +1,30 @@
-data_dir: "./data" # manter as pastas dentro do diretório com os nomes iguais ao class_map
+# Training configuration.
+# Controls dataset paths/labels, model backbone choice, and training hyperparameters.
+
+# ---- Data / labels ----
+data_dir: "./data"  # expects subfolders named according to class_map keys
 output_dir: "./output"
-projection: "VD" # qual projecao deve ser usada
+projection: "VD"    # which radiographic projection to use
+
 class_map:
   ausencia: 0
   ambos: 1
   pleura: 1
   intrapulmonar: 1
-  
-# para imagenet
-model_name: resnet34 # pode ser resnet 18 ou 50 também
-pretrained: true # usa pesos do imagenet
 
-# TorchXRayVision
+# ---- Model ----
+model_name: resnet34
+pretrained: true
+
 use_torchxrayvision: true
 xrv_model_name: "resnet50-res512-all"
 
-# EVA‑X
 use_evax: false
 eva_x_size: "small"
 
-grayscale_input: false # se verdadeiro, não é possível usar os pesos do imagenet; para modelos de raiox, o campo deve ser verdadeiro.
+grayscale_input: false  # if true, ImageNet pretrained weights cannot be used
 
+# ---- Training ----
 batch_size: 16
 num_epochs: 15
 lr: 1e-5
