@@ -1,7 +1,10 @@
+"""
+Utility functions for reproducible experiments and dataset splitting.
+"""
+
 import os
 import random
 import numpy as np
-from sklearn.model_selection import train_test_split
 
 def set_seed(seed):
     import torch

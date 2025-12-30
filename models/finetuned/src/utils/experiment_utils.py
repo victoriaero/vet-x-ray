@@ -1,3 +1,7 @@
+"""
+Plots and auxiliary functions for experiments.
+"""
+
 import os
 import json
 import seaborn as sns
@@ -52,3 +56,4 @@ def plot_roc_curve(y_true, y_probs, output_path):
     plt.grid(True)
     plt.savefig(os.path.join(output_path, "roc_curve.png"))
     plt.close()
+    

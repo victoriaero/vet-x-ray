@@ -1,4 +1,7 @@
-import os
+"""
+PyTorch Dataset for veterinary thoracic radiographs stored as DICOM files.
+"""
+
 import pydicom
 from PIL import Image
 import torch
@@ -32,3 +35,4 @@ class VetRadiographDataset(Dataset):
 
         label = self.labels[idx]
         return img, torch.tensor(label, dtype=torch.long)
+    

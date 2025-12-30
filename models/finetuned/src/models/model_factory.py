@@ -1,3 +1,12 @@
+"""
+This module provides a single entrypoint (get_model) to instantiate different backbones:
+- torchvision models (ResNet/DenseNet), optionally ImageNet-pretrained
+- TorchXRayVision backbones (medical X-ray pretrained)
+- EVA-X ViT-style backbones (if installed)
+It standardizes all backbones into a common interface by removing the original classification head
+and attaching a binary classifier.
+"""
+
 import torch.nn as nn
 import torchvision.models as models
 
@@ -13,6 +22,7 @@ try:
 except ImportError:
     has_evax = False
 
+# Wraps a backbone by removing its original head and attaching a linear classifier.
 class CustomModel(nn.Module):
     def __init__(self, base_model, num_classes=2, use_dropout=False, dropout_rate=0.5):
         super().__init__()
@@ -32,10 +42,7 @@ class CustomModel(nn.Module):
             raise ValueError("Modelo base não reconhecido")
 
         if use_dropout:
-            self.classifier = nn.Sequential(
-                nn.Dropout(p=dropout_rate),
-                nn.Linear(in_features, num_classes)
-            )
+            self.classifier = nn.Sequential(nn.Dropout(p=dropout_rate), nn.Linear(in_features, num_classes))
         else:
             self.classifier = nn.Linear(in_features, num_classes)
 
@@ -43,6 +50,7 @@ class CustomModel(nn.Module):
         features = self.base(x)
         return self.classifier(features)
 
+# TorchXRayVision models expose features differently, and this wrapper unifies them.
 class XRVWrapper(nn.Module):
     def __init__(self, base_model, feature_dim, num_classes=2, use_dropout=False, dropout_rate=0.5):
         super().__init__()
@@ -64,15 +72,12 @@ class XRVWrapper(nn.Module):
             feats = nn.functional.adaptive_avg_pool2d(feats, (1, 1))
             feats = feats.view(feats.size(0), -1)
         else:
-            feats = self.base(x)  # para ResNet
+            feats = self.base(x)  # for ResNet
 
         return self.classifier(feats)
 
-
-def get_model(model_name, pretrained=True, use_dropout=False, dropout_rate=0.5,
-              grayscale_input=False, use_torchxrayvision=False,
-              xrv_model_name="densenet121-res224-all",
-              use_evax=False, eva_x_size="small"):
+# Choose one backend (EVA-X, TorchXRayVision, torchvision) based on config flags.
+def get_model(model_name, pretrained=True, use_dropout=False, dropout_rate=0.5, grayscale_input=False, use_torchxrayvision=False, xrv_model_name="densenet121-res224-all", use_evax=False, eva_x_size="small"):
 
     if use_evax:
         if not has_evax:

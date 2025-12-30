@@ -1,7 +1,11 @@
-import os
+"""
+Training loop for binary anomaly detection in veterinary thoracic radiographs.
+
+Loads patient-level train/val/test splits, builds torchvision transforms, trains a configurable
+backbone (torchvision / TorchXRayVision / EVA-X), and logs final metrics/plots to an output folder.
+"""
+
 import numpy as np
-import matplotlib.pyplot as plt
-from datetime import datetime
 from collections import Counter
 
 from src.models.model_factory import get_model
@@ -16,12 +20,12 @@ from torch.utils.data import DataLoader, WeightedRandomSampler
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score, roc_curve, auc
 
 def build_transforms(config, is_train=True):
+    """ Builds preprocessing/augmentation pipeline. """
     grayscale = config.get("grayscale_input", False)
     use_aug = config.get("use_augmentation", False)
 
     use_xrv = config.get("use_torchxrayvision", False)
     xrv_name = config.get("xrv_model_name", "")
-    use_evax = config.get("use_evax", False)
 
     if use_xrv and xrv_name.startswith("resnet"):
         image_size = 512
@@ -46,11 +50,14 @@ def build_transforms(config, is_train=True):
     else:
         transform_list += [transforms.Normalize([0.5], [0.5])]
 
-
     return transforms.Compose(transform_list)
 
 
 def run_training(config):
+    """
+    Runs end-to-end training and evaluation.
+    Reads dataset splits, builds dataloaders, trains for N epochs, then evaluates on test split.
+    """
     set_seed(config["seed"])
     output_path = create_output_dir(config["output_dir"])
     # save_config(config, output_path)
@@ -71,12 +78,6 @@ def run_training(config):
     train_transform = build_transforms(config, is_train=True)
     eval_transform = build_transforms(config, is_train=False)
 
-    use_evax = config.get("use_evax", False)
-    use_xrv = config.get("use_torchxrayvision", False)
-    xrv_name = config.get("xrv_model_name", "")
-
-    image_size = 512 if use_evax or (use_xrv and xrv_name.startswith("resnet")) else 224
-
     train_ds = VetRadiographDataset(train_paths, train_labels, train_transform, config["projection"])
     val_ds = VetRadiographDataset(val_paths, val_labels, eval_transform, config["projection"])
     test_ds = VetRadiographDataset(test_paths, test_labels, eval_transform, config["projection"])
@@ -89,9 +90,11 @@ def run_training(config):
     train_loader = DataLoader(
         train_ds,
         batch_size=config["batch_size"],
-        shuffle=True,
+        sampler=sampler,
+        shuffle=False,
         num_workers=config["num_workers"]
     )
+
     val_loader = DataLoader(val_ds, batch_size=config["batch_size"], shuffle=False, num_workers=config["num_workers"])
     test_loader = DataLoader(test_ds, batch_size=config["batch_size"], shuffle=False, num_workers=config["num_workers"])
 
@@ -193,12 +196,13 @@ def run_training(config):
         "confusion_matrix": cm.tolist()
     }
 
-    print(f"→ Acurácia : {acc:.4f}")
-    print(f"→ Precisão : {prec:.4f}")
-    print(f"→ Recall   : {rec:.4f}")
-    print(f"→ F1-Score : {f1:.4f}")
-    print(f"→ Matriz de confusão:\n{cm}")
+    print(f"Acurácia : {acc:.4f}")
+    print(f"Precisão : {prec:.4f}")
+    print(f"Recall   : {rec:.4f}")
+    print(f"F1-Score : {f1:.4f}")
+    print(f"Matriz de confusão:\n{cm}")
 
     plot_confusion_matrix(cm, output_path)
     plot_roc_curve(test_targets, test_probs, output_path)
     save_config(config, output_path)
+    

@@ -11,3 +11,4 @@ if __name__ == "__main__":
         config = yaml.safe_load(f)
 
     run_training(config)
+    
