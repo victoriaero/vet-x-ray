@@ -1,6 +1,14 @@
+"""
+Initial self-supervised learning baseline for veterinary thoracic radiographs.
+
+This script evaluates a pretrained BioViL-T image encoder by training a lightweight classification
+head on top of frozen or optionally fine-tuned embeddings. It performs patient-level stratified
+train/validation/test splits, applies standard image augmentations, and reports accuracy, F1-score,
+confusion matrix, and ROC-AUC on the test set.
+"""
+
 import argparse
 import json
-import os
 import re
 import time
 from pathlib import Path
@@ -159,7 +167,6 @@ class BioViLTFeatureExtractor(nn.Module):
             from health_multimodal.image.model.pretrained import get_biovil_t_image_encoder
             self.model = get_biovil_t_image_encoder()
             self.model.eval().to(self.device)
-            self.mode = "himl_multimodal"
         except Exception as e:
             raise RuntimeError(
                 "Failed to load BioViL‑T image encoder from hi-ml-multimodal. "
@@ -183,21 +190,22 @@ class Head(nn.Module):
     def forward(self, x):
         return self.net(x)
 
-def train_one_epoch(feat, head, loader, optimizer, criterion, device):
-    feat.eval()
+def train_one_epoch(feat, head, loader, optimizer, criterion, device, finetune_encoder=False):
+    feat.train() if finetune_encoder else feat.eval()
     head.train()
+
     total_loss = 0.0
     for imgs, labels in loader:
-        imgs = imgs.to(device)
-        labels = labels.to(device)
-        with torch.no_grad():
-            feats = feat(imgs)
+        imgs, labels = imgs.to(device), labels.to(device)
+
+        feats = feat(imgs) if finetune_encoder else feat(imgs).detach()
         logits = head(feats)
 
         loss = criterion(logits, labels)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
         total_loss += loss.item() * imgs.size(0)
     return total_loss / len(loader.dataset)
 
@@ -329,7 +337,7 @@ def main():
 
     for epoch in range(1, args.epochs + 1):
         t0 = time.time()
-        tr_loss = train_one_epoch(feat, head, train_loader, optimizer, criterion, device)
+        tr_loss = train_one_epoch(feat, head, train_loader, optimizer, criterion, device, args.finetune_encoder)
         va_loss, va_acc, va_prec, va_rec, va_f1, va_cm, va_roc = evaluate(feat, head, val_loader, criterion, device)
         train_losses.append(tr_loss)
         val_losses.append(va_loss)
@@ -407,5 +415,5 @@ def main():
 if __name__ == "__main__":
     main()
 
-# exemplo execução:
+# command example:
 # python3 main.py --data_root ../data --projection VD --epochs 20 --batch_size 16 --use_augmentation --dropout --dropout_rate 0.3 --seed 1337 --test_split 0.2 --val_split 0.1 --num_workers 4
